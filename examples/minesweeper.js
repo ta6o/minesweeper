@@ -4,15 +4,30 @@
 *** Version 1.0
 **/
 
+var numberOfBombs = 99;
+var iMatrixSize = 16;
+var jMatrixSize = 30;
+
+// get parameters, if exists
+const urlParams = new URLSearchParams(location.search);
+for (const [key, value] of urlParams) {
+  if (key == "x") {
+    jMatrixSize = parseInt(value);
+  } else if (key == "y") {
+    iMatrixSize = parseInt(value);
+  } else if (key == "b") {
+    numberOfBombs = parseInt(value);
+  }
+}
+
+
 // create board
-const numberOfBombs = 10;
-const matrixSize = 9;
-const boardSize="9x9";
+const boardSize=String(iMatrixSize)+"x"+String(jMatrixSize);
 const theme="url('images/minesweeper.png') "	// theme could be changed with another sprite (cells dimension=16px)
 
 var b = jsboard.board({attach:"game", size:boardSize});
 b.style({borderSpacing: "0px", border:"1px solid #CCC"});
-b.cell("each").style({textIndent:"-9999px", background:theme+"-80px -16px no-repeat", width:"16px", height:"16px", margin:"0", padding:"0"});
+b.cell("each").style({textIndent:"-9999px", background:theme+"-96px -16px no-repeat", width:"16px", height:"16px", margin:"0", padding:"0"});
 
 // setup pieces
 var zero = jsboard.piece({text:"ZR", textIndent:"-9999px", background:theme+"0 0 no-repeat", width:"16px", height:"16px", margin:"0 auto" });
@@ -26,6 +41,7 @@ var seven = jsboard.piece({text:"SV", textIndent:"-9999px", background:theme+"-1
 var eight = jsboard.piece({text:"EI", textIndent:"-9999px", background:theme+"-128px 0 no-repeat", width:"16px", height:"16px", margin:"0 auto" });
 
 var flag = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-64px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var falseFlag = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-80px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
 
 // setup bombs
 var bomb = jsboard.piece({text:"BM", textIndent:"-9999px", background:theme+"0 -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
@@ -33,49 +49,61 @@ var bombRed = jsboard.piece({text:"BR", textIndent:"-9999px", background:theme+"
 
 // array regrouping numbered pieces
 var arrayNumbers = [zero, one, two, three, four, five, six, seven, eight];
+var arrayValues = { "ON": 1, "TW": 2, "TH": 3, "FO": 4, "FI": 5, "SX": 6, "SV": 7, "EI": 8, }
 
+var gameOn = false;
 var gameIsOver = false;
 
 // handle bombs in 2d array
-var bombMatrix;
+var bombMatrix, flagMatrix;
 
-// initializing game array with random placed bombs
-initGame();
+// set number of remaining mines in HTML
+setDigits("l",numberOfBombs)
+var remainingMines = numberOfBombs;
+var elapsed = 0;
+var timerInterval;
+
+// display .game-top
+document.getElementById("game-board").style.display = "block";
+w = document.getElementById("game").offsetWidth;
+document.getElementById("game-board").style.width = String(w)+"px";
+document.getElementById("game-top").style.width = String(w-4)+"px";
+
+
+
+b.cell("each").on("mousedown", function() {
+	if(gameOn && !gameIsOver) document.getElementById("mood").style.backgroundPosition = "-52px -56px"
+});
+
+b.cell("each").on("mouseup", function() {
+  if(gameOn && !gameIsOver) document.getElementById("mood").style.backgroundPosition = "-26px -56px"
+});
 
 // game click handler (left mouse click)
 b.cell("each").on("click", function() {
+  if (!gameOn) {
+    // initializing game array with random placed bombs
+    initGame(b.cell(this).where());
+    gameOn = true;
+  }
 	if(!gameIsOver){
+    var loc = b.cell(this).where();
+    var i = loc[0];
+    var j = loc[1];
 		if (b.cell(this).get()===null) {
-			// getting current cell indices
-			var loc = b.cell(this).where();
-			var i = loc[0];
-			var j = loc[1];
-			
-			if(bombMatrix[i][j]==1){
-				// game over
-				finishGame(i,j);
-				// show "Game Over" in HTML
-				document.getElementById("game-result").innerText = "Game Over";
-				document.getElementById("game-result").className = "game-over";
-			}else{
-			
-				var nearBombs = numberOfNearBombs(i,j); 
-				
-				if(nearBombs==0){
-					// when zero bombs are placed near the current cell
-					exploreRecursively(i,j);
-				}else{
-					b.cell(this).place(arrayNumbers[nearBombs].clone());
-				}
-				
-				// test if all cells not containing bombs are explored
-				if(isAllCellExplored()){
-					finishGame(-1,-1);
-					// show winning message
-					document.getElementById("game-result").innerText = "You won!";
-					document.getElementById("game-result").className = "game-win";				
-				}
-			}
+      testCell(i,j);
+    } else if (b.cell(this).get()!="FL" && b.cell(this).get()!="ZR") {
+      if (arrayValues[b.cell(this).get()] == numberOfNearFlags(i,j)) {
+        for (var k = i-1; k<= i+1; k++) {
+          if (k >= 0 && k<iMatrixSize) {
+            for (var l = j-1; l<= j+1; l++) {
+              if (l >= 0 && l<jMatrixSize && b.cell([k,l]).get() === null) {
+                testCell(k,l)
+              }
+            }
+          }
+        }
+      }
 		}
 	}
 });
@@ -83,41 +111,73 @@ b.cell("each").on("click", function() {
 // placing flags (right mouse click)
 b.cell("each").on("contextmenu", function(ev) {
 	// avoid showing context menu
-    ev.preventDefault();
+  ev.preventDefault();
+  var loc = b.cell(this).where();
+  var i = loc[0];
+  var j = loc[1];
 	// for updating remaining mines
-	var x = eval(document.getElementById("remaining-mines").innerText);
 	if (b.cell(this).get()===null) {
 		b.cell(this).place(flag.clone());	// place a flag
-		document.getElementById("remaining-mines").innerText = x - 1;
-	}else if(b.cell(this).get()=="FL"){
+    flagMatrix[i][j] = 1;
+    remainingMines -= 1;
+	} else if (b.cell(this).get()=="FL") {
 		b.cell(this).rid();
-		document.getElementById("remaining-mines").innerText = x + 1;
+    flagMatrix[i][j] = 0;
+    remainingMines += 1;
 	}
-    return false;
+  setDigits("l",remainingMines)
+  return false;
 }, false);
 
-function initGame(){
+function initGame(first_click){
 	var i, j;
 	bombMatrix = [];
-	for (i=0; i<matrixSize; i++){
+	flagMatrix = [];
+	for (i=0; i<iMatrixSize; i++){
 		bombMatrix[i] = [];
-		for (j=0; j<matrixSize; j++){
+		flagMatrix[i] = [];
+		for (j=0; j<jMatrixSize; j++){
 			bombMatrix[i][j] = 0;
+			flagMatrix[i][j] = 0;
 		}
 	}
 	
 	// place bombs randomly
 	var placedBombs = 0;
 	while(placedBombs<numberOfBombs){
-		i = Math.floor(Math.random() * matrixSize);
-		j = Math.floor(Math.random() * matrixSize);
-		if(bombMatrix[i][j]==0){
+		i = Math.floor(Math.random() * iMatrixSize);
+		j = Math.floor(Math.random() * jMatrixSize);
+    if(bombMatrix[i][j]==0 && !(i == first_click[0] && j == first_click[1])){
 			bombMatrix[i][j]=1;
 			placedBombs++;
-		}
+    }
 	}
-	// set number of remaining mines in HTML
-	document.getElementById("remaining-mines").innerText = numberOfBombs;
+  timerInterval = window.setInterval(timer,1000)
+}
+
+function testCell(i,j) {
+
+  if(bombMatrix[i][j]==1){
+    // game over
+    finishGame(i,j);
+  } else {
+  
+    var nearBombs = numberOfNearBombs(i,j); 
+    
+    if(nearBombs==0){
+      // when zero bombs are placed near the current cell
+      exploreRecursively(i,j);
+    }else{
+      b.cell([i,j]).place(arrayNumbers[nearBombs].clone());
+    }
+    
+    // test if all cells not containing bombs are explored
+    if(isAllCellExplored()){
+      finishGame(-1,-1);
+      // show winning message
+      document.getElementById("mood").style.backgroundPosition = "-104px -56px"
+    }
+  }
 }
 
 function numberOfNearBombs(i,j){
@@ -128,30 +188,59 @@ function numberOfNearBombs(i,j){
 	if(j>0){
 		nearBombs = nearBombs + bombMatrix[i][j-1];
 	}
-	if(i<matrixSize-1){
+	if(i<iMatrixSize-1){
 		nearBombs = nearBombs + bombMatrix[i+1][j];
 	}
-	if(j<matrixSize-1){
+	if(j<jMatrixSize-1){
 		nearBombs = nearBombs + bombMatrix[i][j+1];
 	}
 	if((i-1>=0)&&(j-1>=0)){
 		nearBombs = nearBombs + bombMatrix[i-1][j-1];
 	}
-	if((i+1<matrixSize)&&(j+1<matrixSize)){
+	if((i+1<iMatrixSize)&&(j+1<jMatrixSize)){
 		nearBombs = nearBombs + bombMatrix[i+1][j+1];
 	}
-	if((i-1>=0)&&(j+1<matrixSize)){
+	if((i-1>=0)&&(j+1<jMatrixSize)){
 		nearBombs = nearBombs + bombMatrix[i-1][j+1];
 	}	
-	if((i+1<matrixSize)&&(j-1>=0)){
+	if((i+1<iMatrixSize)&&(j-1>=0)){
 		nearBombs = nearBombs + bombMatrix[i+1][j-1];
 	}
 	return nearBombs; 
 }
 
+function numberOfNearFlags(i,j){
+	var nearFlags = 0;
+	if(i>0){
+		nearFlags = nearFlags + flagMatrix[i-1][j];
+	}
+	if(j>0){
+		nearFlags = nearFlags + flagMatrix[i][j-1];
+	}
+	if(i<iMatrixSize-1){
+		nearFlags = nearFlags + flagMatrix[i+1][j];
+	}
+	if(j<jMatrixSize-1){
+		nearFlags = nearFlags + flagMatrix[i][j+1];
+	}
+	if((i-1>=0)&&(j-1>=0)){
+		nearFlags = nearFlags + flagMatrix[i-1][j-1];
+	}
+	if((i+1<iMatrixSize)&&(j+1<jMatrixSize)){
+		nearFlags = nearFlags + flagMatrix[i+1][j+1];
+	}
+	if((i-1>=0)&&(j+1<jMatrixSize)){
+		nearFlags = nearFlags + flagMatrix[i-1][j+1];
+	}	
+	if((i+1<iMatrixSize)&&(j-1>=0)){
+		nearFlags = nearFlags + flagMatrix[i+1][j-1];
+	}
+	return nearFlags; 
+}
+
 // this function is called when zero cell is clicked
 function exploreRecursively(i,j){
-	if((i>=0)&&(i<matrixSize)&&(j>=0)&&(j<matrixSize)&&(b.cell([i,j]).get()===null)){
+	if((i>=0)&&(i<iMatrixSize)&&(j>=0)&&(j<jMatrixSize)&&(b.cell([i,j]).get()===null)){
 		var nearBombs = numberOfNearBombs(i,j);
 		b.cell([i,j]).place(arrayNumbers[nearBombs].clone());
 		if((nearBombs==0)){		
@@ -166,28 +255,35 @@ function exploreRecursively(i,j){
 	- to resolve the grid, this function can be called by passing (-1,-1) arguments
 */
 function finishGame(k,l){
+  window.clearInterval(timerInterval)
 	var aux; 
-	for (var i=0; i<matrixSize; i++){
-		for (var j=0; j<matrixSize; j++){
-			if(bombMatrix[i][j]==1){
-				if((i==k)&&(j==l)){
+	for (var i=0; i<iMatrixSize; i++) {
+		for (var j=0; j<jMatrixSize; j++) {
+      if (bombMatrix[i][j]==1) {
+				if ((i==k)&&(j==l)) {
 					b.cell([i,j]).place(bombRed.clone());
-				}else{
+        } else if (flagMatrix[i][j]==1) {
+					b.cell([i,j]).place(flag.clone());
+        } else {
 					b.cell([i,j]).place(bomb.clone());
 				}				
-			}else{
-				aux = numberOfNearBombs(i,j);
-				b.cell([i,j]).place(arrayNumbers[aux].clone());
+			} else if (flagMatrix[i][j]==1) {
+          b.cell([i,j]).place(falseFlag.clone());
+      } else {
+        aux = numberOfNearBombs(i,j);
+        b.cell([i,j]).place(arrayNumbers[aux].clone());
 			}
 		}	
 	}
+  // show "Game Over" in HTML
+  document.getElementById("mood").style.backgroundPosition = "-78px -56px"
 	gameIsOver = true;
 }
 
 // verify if all cells are exlored (win scenario)
 function isAllCellExplored(){
-	for (var i=0; i<matrixSize; i++){
-		for (var j=0; j<matrixSize; j++){
+	for (var i=0; i<iMatrixSize; i++){
+		for (var j=0; j<jMatrixSize; j++){
 			if((bombMatrix[i][j]==0)&&(b.cell([i,j]).get()===null)){
 				return false;
 			}
@@ -195,3 +291,18 @@ function isAllCellExplored(){
 	}
 	return true;
 }
+
+function timer() {
+  elapsed += 1;
+  setDigits("p", elapsed);
+}
+
+function setDigits (target, value) {
+  v1 = Math.floor(value / 100);
+  document.getElementById(target+"1").style.backgroundPosition = "-"+String(v1*13)+"px -32px"
+  v2 = Math.floor(value % 100 / 10)
+  document.getElementById(target+"2").style.backgroundPosition = "-"+String(v2*13)+"px -32px"
+  v3 = value % 10;
+  document.getElementById(target+"3").style.backgroundPosition = "-"+String(v3*13)+"px -32px"
+}
+

@@ -7,35 +7,62 @@
     	body{
 			margin: 0 auto;
 			color: #333;
-			background-color: #f9eedd;
+			background-color: #888;
 			font-size: 14px;
 			font-family: Arial, sans-serif;
 			line-height: 1.5em;
-			width: 600px;
 		}
-		h3{
-			border-bottom: 1px solid #262696;
-			color: #262696;
-			width: 160px;
+    #game-board {
+      background-color: #c0c0c0;
+      padding: 5px;
+			margin: 24px auto;
+      display: none;
 		}
-		a{
-			color: #bd0707;
+    #game {
+      border-top: 3px solid #838383 !important;
+      border-left: 3px solid #838383 !important;
+      border-bottom: 3px solid #fefefe !important;
+      border-right: 3px solid #fefefe !important;
 		}
-		.left-side{
-			float: left;			
-			margin: 15px 20px 0 0;
-			width: 200px;
-		}
-		.right-side{
-			border-left: 1px solid #CCC;
-			padding-left: 20px;
-			float: left;
-			width: 340px;
-		}
-		.game-board{
-			margin: 0 auto;
-			width: 145px;
-		}
+    #game-top {
+      margin-bottom: 5px;
+      position: relative;
+      height: 29px;
+      border-top: 2px solid #838383 !important;
+      border-left: 2px solid #838383 !important;
+      border-bottom: 2px solid #fefefe !important;
+      border-right: 2px solid #fefefe !important;
+    }
+		#left, #past{
+      height: 23px;
+      width: 39px;
+      background-color: #000;
+      position: absolute;
+      top:2px;;
+      border-top: 1px solid #838383 !important;
+      border-left: 1px solid #838383 !important;
+      border-bottom: 1px solid #fefefe !important;
+      border-right: 1px solid #fefefe !important;
+    }
+    #left *, #past * {
+      display: inline;
+      width: 13px;
+      height: 23px;
+      background: url("images/minesweeper.png") 0px -32px no-repeat;
+      position: absolute;
+      top: 0;
+    }
+    #left { left: 3px;}
+    #past { right: 3px;}
+    #mood {
+      background-color: #000;
+      width: 26px;
+      height: 26px;
+      position: absolute;
+      top: 2px;
+      left: calc( 50% - 13px);
+      background: url("images/minesweeper.png") -26px -56px no-repeat;
+    }
 		#remaining-mines{
 			color:#bd0707;
 			font-weight: bold;
@@ -48,43 +75,30 @@
 			text-align: center;
 			margin-bottom: 10px;
 		}
-		.game-over{
-			color: red;
-		}
-		.game-win{
-			color:green;
-		}
     </style>   
+
 </head>
 <body>
-	<h2>&#x1F4A3; Mine<span style="color:#bd0707">sweeper</span> v1.0</h2>
-	<div class="left-side">
-		<button onclick="location.reload();"> New Game </button>
-		<button onclick="finishGame(-1,-1);"> Resolve Game </button>
-		
-		<div class="game-board">
-			<p><span id="remaining-mines"></span> remaining mines</p>
-			<div id="game-result"></div>
-			<table id='game'></table>
-		</div>
-	</div>
-	<div class="right-side">
-		<h3>About this version</h3>
-		<ul>
-			<li><b>Author :</b> <a href="https://oussamabenkhiroun.com/" title="Oussama Ben Khiroun" target="_blank"><b>Oussama Ben Khiroun</b></a></li>
-			<li><b>Language :</b> JavaScript using <a href="https://github.com/danielborowski/jsboard" title="jsboard on GitHub" target="_blank">jsboard</a> library (credits to <a href="https://github.com/danielborowski" title="danielborowski on GitHub" target="_blank">danielborowski</a>)</li>
-			<li><b>Algorithm :</b> Use of recursive grid exploration in case of zero neighbour mines
-			<li><b>Design :</b> Microsoft (Windows XP) using sprites</li>
-			<li><b>Source Code :</b> <a href="https://github.com/oussbenk/minesweeper" title="GitHub Repo" target="_blank">GitHub</a></li>
-			<li><b>License :</b> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">Creative Commons Attribution-NonCommercial 4.0 International License</a>		
-			&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/80x15.png" /></a></li>
-			</ul>
-		<h3>About Minesweeper</h3>
-		<p><a href="https://en.wikipedia.org/wiki/Minesweeper_(video_game)" title="Minesweeper on Wikipedia" target="_blank">Minesweeper</a> is a single-player puzzle video game. 
-		The objective of the game is to clear a rectangular board containing hidden "mines" or bombs without detonating any of them, with help from clues about the number of neighboring mines in each field <a href="https://en.wikipedia.org/wiki/Minesweeper_(video_game)" title="Minesweeper on Wikipedia" target="_blank">[Wikipedia]</a>.
-		</p>
-	</div>
-	
+  
+  <div id="game-board">
+    <div id="game-top">
+      <div id='left'>
+        <div id="l1" style="left:0px;"></div>
+        <div id="l2" style="left:13px;"></div>
+        <div id="l3" style="left:26px;"></div>
+      </div>
+      <div onclick="location.reload();" id='mood'></div>
+      <div id='past'>
+        <div id="p1" style="left:0px;"></div>
+        <div id="p2" style="left:13px;"></div>
+        <div id="p3" style="left:26px;"></div>
+      </div>
+    </div>
+    <table id='game'></table>
+  </div>
+
+  <div id="game-result"></div>
+
 	<script src="jsboard.min.js"></script>
 	<script src="examples/minesweeper.js"></script>
 </body>
