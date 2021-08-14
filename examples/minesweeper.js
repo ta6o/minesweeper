@@ -7,6 +7,7 @@
 var numberOfBombs = 99;
 var iMatrixSize = 16;
 var jMatrixSize = 30;
+var playerID = 2;
 
 // get parameters, if exists
 const urlParams = new URLSearchParams(location.search);
@@ -17,6 +18,8 @@ for (const [key, value] of urlParams) {
     iMatrixSize = parseInt(value);
   } else if (key == "b") {
     numberOfBombs = parseInt(value);
+  } else if (key == "u") {
+    playerID = parseInt(value);
   }
 }
 
@@ -27,7 +30,9 @@ const theme="url('images/minesweeper.png') "	// theme could be changed with anot
 
 var b = jsboard.board({attach:"game", size:boardSize});
 b.style({borderSpacing: "0px", border:"1px solid #CCC"});
-b.cell("each").style({textIndent:"-9999px", background:theme+"-96px -16px no-repeat", width:"16px", height:"16px", margin:"0", padding:"0"});
+var nil = jsboard.piece({text:"NL", textIndent:"-9999px", background:theme+"-32px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto", padding:"0" });
+b.cell("each").style({background:"transparent", width:"16px", height:"16px", margin:"0", padding:"0"});
+b.cell("each").place(nil.clone())
 
 // setup pieces
 var zero = jsboard.piece({text:"ZR", textIndent:"-9999px", background:theme+"0 0 no-repeat", width:"16px", height:"16px", margin:"0 auto" });
@@ -40,12 +45,32 @@ var six = jsboard.piece({text:"SX", textIndent:"-9999px", background:theme+"-96p
 var seven = jsboard.piece({text:"SV", textIndent:"-9999px", background:theme+"-112px 0 no-repeat", width:"16px", height:"16px", margin:"0 auto" });
 var eight = jsboard.piece({text:"EI", textIndent:"-9999px", background:theme+"-128px 0 no-repeat", width:"16px", height:"16px", margin:"0 auto" });
 
-var flag = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-64px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
-var falseFlag = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-80px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f1 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-48px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff1 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-64px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f2 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-80px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff2 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-96px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f3 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-112px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff3 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-128px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f4 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-16px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff4 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-32px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f5 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-48px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff5 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-64px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f6 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-80px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff6 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-96px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var f7 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-112px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var ff7 = jsboard.piece({text:"FL", textIndent:"-9999px", background:theme+"-128px -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+
+var flags = [f1,f2,f3,f4,f5,f6,f7]
+var falseFlags = [ff1,ff2,ff3,ff4,ff5,ff6,ff7]
+var colors = [ "#0000FF", "#008000", "#FF0000", "#000080", "#800000", "#008080", "#808080" ]
+
+var flag = flags[playerID]
+var falseFlag = falseFlags[playerID]
+
 
 // setup bombs
 var bomb = jsboard.piece({text:"BM", textIndent:"-9999px", background:theme+"0 -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
-var bombRed = jsboard.piece({text:"BR", textIndent:"-9999px", background:theme+"-32px -16px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
+var bombRed = jsboard.piece({text:"BR", textIndent:"-9999px", background:theme+"0 -32px no-repeat", width:"16px", height:"16px", margin:"0 auto" });
 
 // array regrouping numbered pieces
 var arrayNumbers = [zero, one, two, three, four, five, six, seven, eight];
@@ -72,11 +97,11 @@ document.getElementById("game-top").style.width = String(w-4)+"px";
 
 
 b.cell("each").on("mousedown", function() {
-	if(gameOn && !gameIsOver) document.getElementById("mood").style.backgroundPosition = "-52px -56px"
+	if(gameOn && !gameIsOver) document.getElementById("mood").style.backgroundPosition = "-52px -72px"
 });
 
 b.cell("each").on("mouseup", function() {
-  if(gameOn && !gameIsOver) document.getElementById("mood").style.backgroundPosition = "-26px -56px"
+  if(gameOn && !gameIsOver) document.getElementById("mood").style.backgroundPosition = "-26px -72px"
 });
 
 // game click handler (left mouse click)
@@ -90,14 +115,15 @@ b.cell("each").on("click", function() {
     var loc = b.cell(this).where();
     var i = loc[0];
     var j = loc[1];
-		if (b.cell(this).get()===null) {
+    console.log((b.cell(this).get()))
+		if (b.cell(this).get()==="NL") {
       testCell(i,j);
     } else if (b.cell(this).get()!="FL" && b.cell(this).get()!="ZR") {
       if (arrayValues[b.cell(this).get()] == numberOfNearFlags(i,j)) {
         for (var k = i-1; k<= i+1; k++) {
           if (k >= 0 && k<iMatrixSize) {
             for (var l = j-1; l<= j+1; l++) {
-              if (l >= 0 && l<jMatrixSize && b.cell([k,l]).get() === null) {
+              if (l >= 0 && l<jMatrixSize && b.cell([k,l]).get() === "NL") {
                 testCell(k,l)
               }
             }
@@ -116,7 +142,7 @@ b.cell("each").on("contextmenu", function(ev) {
   var i = loc[0];
   var j = loc[1];
 	// for updating remaining mines
-	if (b.cell(this).get()===null) {
+	if (b.cell(this).get()==="NL") {
 		b.cell(this).place(flag.clone());	// place a flag
     flagMatrix[i][j] = 1;
     remainingMines -= 1;
@@ -175,7 +201,7 @@ function testCell(i,j) {
     if(isAllCellExplored()){
       finishGame(-1,-1);
       // show winning message
-      document.getElementById("mood").style.backgroundPosition = "-104px -56px"
+      document.getElementById("mood").style.backgroundPosition = "-104px -72px"
     }
   }
 }
@@ -240,7 +266,7 @@ function numberOfNearFlags(i,j){
 
 // this function is called when zero cell is clicked
 function exploreRecursively(i,j){
-	if((i>=0)&&(i<iMatrixSize)&&(j>=0)&&(j<jMatrixSize)&&(b.cell([i,j]).get()===null)){
+	if((i>=0)&&(i<iMatrixSize)&&(j>=0)&&(j<jMatrixSize)&&(b.cell([i,j]).get()==="NL")){
 		var nearBombs = numberOfNearBombs(i,j);
 		b.cell([i,j]).place(arrayNumbers[nearBombs].clone());
 		if((nearBombs==0)){		
@@ -262,6 +288,7 @@ function finishGame(k,l){
       if (bombMatrix[i][j]==1) {
 				if ((i==k)&&(j==l)) {
 					b.cell([i,j]).place(bombRed.clone());
+					b.cell([i,j]).style({"background-color": colors[playerID]});
         } else if (flagMatrix[i][j]==1) {
 					b.cell([i,j]).place(flag.clone());
         } else {
@@ -276,7 +303,7 @@ function finishGame(k,l){
 		}	
 	}
   // show "Game Over" in HTML
-  document.getElementById("mood").style.backgroundPosition = "-78px -56px"
+  document.getElementById("mood").style.backgroundPosition = "-78px -72px"
 	gameIsOver = true;
 }
 
@@ -284,7 +311,7 @@ function finishGame(k,l){
 function isAllCellExplored(){
 	for (var i=0; i<iMatrixSize; i++){
 		for (var j=0; j<jMatrixSize; j++){
-			if((bombMatrix[i][j]==0)&&(b.cell([i,j]).get()===null)){
+			if((bombMatrix[i][j]==0)&&(b.cell([i,j]).get()==="NL")){
 				return false;
 			}
 		}	
@@ -299,10 +326,10 @@ function timer() {
 
 function setDigits (target, value) {
   v1 = Math.floor(value / 100);
-  document.getElementById(target+"1").style.backgroundPosition = "-"+String(v1*13)+"px -32px"
+  document.getElementById(target+"1").style.backgroundPosition = "-"+String(v1*13)+"px -48px"
   v2 = Math.floor(value % 100 / 10)
-  document.getElementById(target+"2").style.backgroundPosition = "-"+String(v2*13)+"px -32px"
+  document.getElementById(target+"2").style.backgroundPosition = "-"+String(v2*13)+"px -48px"
   v3 = value % 10;
-  document.getElementById(target+"3").style.backgroundPosition = "-"+String(v3*13)+"px -32px"
+  document.getElementById(target+"3").style.backgroundPosition = "-"+String(v3*13)+"px -48px"
 }
 
